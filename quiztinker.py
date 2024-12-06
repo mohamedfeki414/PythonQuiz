@@ -2,119 +2,105 @@ import tkinter as tk
 import random
 import time
 
-# Questions et réponses
+# Liste des questions et des réponses
 questions = ["What is the largest continent by land area?",
-"Which river is the longest in the world?",
-"Which country has the most natural lakes?",
-"Which famous artist is known for the painting 'Starry Night'?",
-"The Louvre Museum is located in which city?",
-"In which sport would you perform a slam dunk?",
-"Which country has won the most FIFA World Cups?",
-"What is the top prize awarded in the Olympic Games?",
-"Who wrote the play 'Romeo and Juliet'?",
-"Who painted the Mona Lisa?"]
+             "Which river is the longest in the world?",
+             "Which country has the most natural lakes?",
+             "Which famous artist is known for the painting 'Starry Night'?",
+             "The Louvre Museum is located in which city?",
+             "In which sport would you perform a slam dunk?",
+             "Which country has won the most FIFA World Cups?",
+             "What is the top prize awarded in the Olympic Games?",
+             "Who wrote the play 'Romeo and Juliet'?",
+             "Who painted the Mona Lisa?"]
 
 answers = [["Africa", "Asia", "Europe", "South America"],
-["Amazon River", "Nile River", "Yangtze River", "Mississippi River"],
-["Canada", "United States", "India", "Russia"],
-["Vincent van Gogh", "Claude Monet", "Pablo Picasso", "Salvador Dalí"],
-["Rome", "London", "Paris", "Madrid"],
-["Tennis", "Football", "Basketball", "Volleyball"],
-["Brazil", "Germany", "Italy", "Argentina"],
-["Bronze Medal", "Silver Medal", "Gold Medal", "Platinum Medal"],
-["William Shakespeare", "Jane Austen", "Charles Dickens", "Mark Twain"],
-["Leonardo da Vinci", "Michelangelo", "Raphael", "Donatello"]]
+           ["Amazon River", "Nile River", "Yangtze River", "Mississippi River"],
+           ["Canada", "United States", "India", "Russia"],
+           ["Vincent van Gogh", "Claude Monet", "Pablo Picasso", "Salvador Dalí"],
+           ["Rome", "London", "Paris", "Madrid"],
+           ["Tennis", "Football", "Basketball", "Volleyball"],
+           ["Brazil", "Germany", "Italy", "Argentina"],
+           ["Bronze Medal", "Silver Medal", "Gold Medal", "Platinum Medal"],
+           ["William Shakespeare", "Jane Austen", "Charles Dickens", "Mark Twain"],
+           ["Leonardo da Vinci", "Michelangelo", "Raphael", "Donatello"]]
 
 correct_answer = ["Asia", "Nile River", "Canada", "Vincent van Gogh", "Paris", "Basketball", "Brazil", "Gold Medal", "William Shakespeare", "Leonardo da Vinci"]
 
-# Mélanger les indices pour rendre les questions aléatoires
 selected_indices = random.sample(range(len(questions)), len(questions))
 
-# Variables pour le score et l'indice de question
 score = 0
-indice = 0
+current_question = 0
+time_limit = 20  # Temps limite pour chaque question en secondes
 
-# Fonction pour afficher la question suivante
-def next_question():
-    global indice
-    if indice < len(selected_indices):
-        # Afficher la question actuelle
-        question_label.config(text=questions[selected_indices[indice]])
-        options = answers[selected_indices[indice]]
+# Création de la fenêtre principale
+fenetre = tk.Tk()
+fenetre.title("Quiz avec Temps Limité")
+
+# Fonction qui met à jour la question et les options
+def afficher_question():
+    global current_question, time_left
+    if current_question < len(questions):
+        question = questions[selected_indices[current_question]]
+        options = answers[selected_indices[current_question]]
+        # Mettre à jour la question et les options
+        question_label.config(text=question)
         for i in range(4):
-            buttons[i].config(text=options[i])
-
-        # Réinitialiser le chronomètre et commencer la nouvelle question
-        start_time = time.time()
-        time_left_label.config(text="Time left: 10s")
-        # Attendre que l'utilisateur réponde ou que le temps soit écoulé
-        root.after(1000, check_time_left, start_time)
-
-def check_time_left(start_time):
-    elapsed_time = time.time() - start_time
-    time_left = max(0, 10 - int(elapsed_time))  # Calcul du temps restant
-    time_left_label.config(text=f"Time left: {time_left}s")
-    
-    if elapsed_time > 10:
-        time_left_label.config(text="Time's up!")
-        check_answer(None)  # Si le temps est écoulé, vérifier la réponse (aucune réponse)
-
+            boutons_reponse[i].config(text=options[i], command=lambda i=i: verifier_reponse(i))
+        
+        # Réinitialiser le temps restant et démarrer le compte à rebours
+        time_left = time_limit
+        countdown()
     else:
-        root.after(1000, check_time_left, start_time)
+        # Afficher le score final à la fin du quiz
+        question_label.config(text=f"Quiz terminé! Votre score est : {score}")
+        for bouton in boutons_reponse:
+            bouton.config(state=tk.DISABLED)
 
-def check_answer(answer):
-    global score, indice
-    if answer is None:
-        # Temps écoulé sans réponse
-        answer_label.config(text=f"Time's up! Correct answer: {correct_answer[selected_indices[indice]]}")
+# Fonction qui gère le compte à rebours
+def countdown():
+    global time_left
+    if time_left > 0:
+        time_left -= 1
+        timer_label.config(text=f"Temps restant : {time_left} secondes")
+        fenetre.after(1000, countdown)  # Appel récursif toutes les secondes
     else:
-        if answers[selected_indices[indice]][answer] == correct_answer[selected_indices[indice]]:
+        # Si le temps est écoulé, passer à la question suivante
+        verifier_reponse(None)
+
+# Fonction appelée lorsque l'on clique sur une réponse
+def verifier_reponse(index):
+    global score, current_question, time_left
+    # Si le temps est écoulé sans réponse
+    if index is None:
+        index = -1  # Indique qu'il n'y a pas de réponse
+        time_left = 0  # Arrêter le compte à rebours
+
+    if index != -1:  # Si l'utilisateur a cliqué sur une option
+        selected_option = answers[selected_indices[current_question]][index]
+        if selected_option == correct_answer[selected_indices[current_question]]:
             score += 10
-            answer_label.config(text="Correct answer!")
-        else:
-            answer_label.config(text=f"Incorrect! Correct answer: {correct_answer[selected_indices[indice]]}")
     
-    # Attendre un peu avant de passer à la prochaine question
-    if indice + 1 < len(selected_indices):
-        next_button.config(state="normal")
-    else:
-        finish_quiz()
+    current_question += 1
+    afficher_question()
 
-def select_answer(answer):
-    next_button.config(state="normal")
-    check_answer(answer)
-
-def finish_quiz():
-    question_label.config(text="Quiz Finished!")
-    answer_label.config(text=f"Your final score is: {score}")
-    for btn in buttons:
-        btn.config(state="disabled")
-
-# Création de la fenêtre Tkinter
-root = tk.Tk()
-root.title("Quiz Game")
-
-# Labels pour afficher les questions et le temps restant
-question_label = tk.Label(root, text="", font=("Arial", 14), width=50, height=4)
+# Création de la zone pour afficher la question
+question_label = tk.Label(fenetre, text="", font=("Arial", 14), width=50, height=2)
 question_label.pack(pady=20)
 
-time_left_label = tk.Label(root, text="Time left: 10s", font=("Arial", 12))
-time_left_label.pack(pady=10)
+# Création des boutons pour les réponses
+boutons_reponse = []
+for i in range(4):
+    bouton = tk.Button(fenetre, text="", font=("Arial", 12), width=30, height=2)
+    bouton.pack(pady=5)
+    boutons_reponse.append(bouton)
 
-answer_label = tk.Label(root, text="", font=("Arial", 12))
-answer_label.pack(pady=10)
+# Création du label pour afficher le temps restant
+timer_label = tk.Label(fenetre, text=f"Temps restant : {time_limit} secondes", font=("Arial", 12))
+timer_label.pack(pady=10)
 
-# Boutons pour les réponses
-buttons = [tk.Button(root, text="", width=50, height=2, command=lambda i=i: select_answer(i)) for i in range(4)]
-for btn in buttons:
-    btn.pack(pady=5)
+# Lancer le quiz avec la première question
+afficher_question()
 
-# Bouton suivant pour la question suivante
-next_button = tk.Button(root, text="Next", state="disabled", command=lambda: [next_question(), next_button.config(state="disabled")])
-next_button.pack(pady=20)
-
-# Lancer le quiz
-next_question()
-
-# Lancer la boucle principale de Tkinter
-root.mainloop()
+# Lancer la boucle principale de l'interface graphique
+fenetre.mainloop()
