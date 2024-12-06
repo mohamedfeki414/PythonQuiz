@@ -31,7 +31,7 @@ selected_indices = random.sample(range(len(questions)), len(questions))
 
 score = 0
 current_question = 0
-time_limit = 10  # Temps limite pour chaque question en secondes
+time_limit = 20  # Temps limite pour chaque question en secondes
 
 # Création de la fenêtre principale
 fenetre = tk.Tk()
